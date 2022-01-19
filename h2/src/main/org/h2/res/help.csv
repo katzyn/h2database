@@ -7,7 +7,7 @@
 "Commands (DML)","SELECT","
 SELECT [ DISTINCT @h2@ [ ON ( expression [,...] ) ] | ALL ]
 selectExpression [,...]
-[ FROM tableExpression [,...] ]
+[ FROM tableReference [,...] ]
 [ WHERE expression ]
 [ GROUP BY groupingElement [,...] ] [ HAVING expression ]
 [ WINDOW { { windowName AS windowSpecification } [,...] } ]
@@ -186,7 +186,7 @@ MERGE INTO TEST KEY(ID) VALUES(2, 'World')
 
 "Commands (DML)","MERGE USING","
 MERGE INTO [schemaName.]targetTableName [ [AS] targetAlias]
-USING tableExpression
+USING tableReference
 ON expression
 mergeWhenClause [,...]
 ","
@@ -3686,22 +3686,76 @@ Please note the text concatenation operator is ""||"".
 ID + 20
 "
 
-"Other Grammar","Table Expression","
+"Other Grammar","Table Reference","
+tableFactor | joinedTable
+","
+A table or join.
+","
+TEST1 AS T1 LEFT JOIN TEST2 AS T2 ON T1.ID = T2.PARENT_ID
+"
+
+"Other Grammar","Table Factor","
+tablePrimary
+","
+Table factor.
+","
+TEST1
+"
+
+"Other Grammar","Table Primary","
 { [ schemaName. ] tableName
     | ( query )
     | unnest
     | table
-    | dataChangeDeltaTable }
+    | dataChangeDeltaTable
+    | parenthesizedJoinedTable }
 [ [ AS ] newTableAlias [ ( columnName [,...] ) ] ]
 @h2@ [ USE INDEX ([ indexName [,...] ]) ]
-[ { { LEFT | RIGHT } [ OUTER ] | [ INNER ] | CROSS | NATURAL }
-    JOIN tableExpression [ joinSpecification ] ]
 ","
-Joins a table. The join specification is not supported for cross and natural joins.
+A table.
+","
+TEST1 AS T1
+"
+
+"Other Grammar","Parenthesized Joined Table","
+( parenthesizedJoinedTable ) | joinedTable
+","
+A joined table in parentheses.
+","
+(TEST1 LEFT JOIN TEST2)
+"
+
+"Other Grammar","Joined Table","
+crossJoin | qualifiedJoin | naturalJoin
+","
+A join.
+","
+TEST1 AS T1 LEFT JOIN TEST2 AS T2 ON T1.ID = T2.PARENT_ID
+"
+
+"Other Grammar","Cross Join","
+tableReference CROSS JOIN tableFactor
+","
+Cross-joins a table.
+","
+TEST1 CROSS JOIN TEST2
+"
+
+"Other Grammar","Qualified Join","
+tableReference { { LEFT | RIGHT } [ OUTER ] | [ INNER ] } JOIN tableFactor [ joinSpecification ]
+","
+Joins a table.
+","
+TEST1 AS T1 LEFT JOIN TEST2 AS T2 ON T1.ID = T2.PARENT_ID
+"
+
+"Other Grammar","Natural Join","
+tableReference NATURAL JOIN tableFactor
+","
 A natural join is an inner join, where the condition is automatically on the
 columns with the same name.
 ","
-TEST1 AS T1 LEFT JOIN TEST2 AS T2 ON T1.ID = T2.PARENT_ID
+TEST1 NATURAL JOIN TEST2
 "
 
 "Other Grammar","Within group specification","
