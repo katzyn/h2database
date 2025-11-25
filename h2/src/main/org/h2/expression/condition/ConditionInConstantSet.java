@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
 
+import org.h2.engine.Database;
 import org.h2.engine.SessionLocal;
 import org.h2.expression.Expression;
 import org.h2.expression.ExpressionColumn;
@@ -53,7 +54,17 @@ public final class ConditionInConstantSet extends ConditionIn {
     ConditionInConstantSet(SessionLocal session, Expression left, boolean not, boolean whenOperand,
             ArrayList<Expression> valueList) {
         super(left, not, whenOperand, valueList);
-        this.valueSet = new TreeSet<>(session);
+        /*
+         * We can't hold a reference to the session, because expression can be
+         * used by other sessions (in CHECK constraints, for example).
+         *
+         * Because we cast all expressions to the same data type before
+         * searching in the map, the lookup in the map itself shouldn't depend
+         * on session-level settings, so it should be safe to use a database
+         * here.
+         */
+        Database db = session.getDatabase();
+        this.valueSet = new TreeSet<>((o1, o2) -> o1.compareTo(o2, db, db.getCompareMode()));
         TypeInfo type = left.getType();
         for (Expression expression : valueList) {
             type = TypeInfo.getHigherType(type, expression.getType());

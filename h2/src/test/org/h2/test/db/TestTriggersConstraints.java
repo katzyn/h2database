@@ -60,6 +60,7 @@ public class TestTriggersConstraints extends TestDb implements Trigger {
         testTriggerAsJavascript();
         testTriggers();
         testConstraints();
+        testCheckConstraints();
         testCheckConstraintErrorMessage();
         testMultiPartForeignKeys();
         testConcurrent();
@@ -565,6 +566,19 @@ public class TestTriggersConstraints extends TestDb implements Trigger {
         assertSingleValue(stat, "select count(*) from test", 0);
         stat.execute("drop table test");
         conn.close();
+    }
+
+    private void testCheckConstraints() throws SQLException {
+        Connection conn = getConnection("trigger");
+        Statement stat = conn.createStatement();
+        stat.execute("DROP TABLE IF EXISTS TEST");
+        stat.execute("CREATE TABLE TEST(ID BIGINT PRIMARY KEY, A INT, B INT, CHECK (B IN (2, 3, 5)))");
+        Connection otherConnection = getConnection("trigger");
+        conn.close();
+        stat = otherConnection.createStatement();
+        stat.execute("INSERT INTO TEST VALUES (2, 3, 2)");
+        stat.execute("DROP TABLE TEST");
+        otherConnection.close();
     }
 
     private void testCheckConstraintErrorMessage() throws SQLException {
